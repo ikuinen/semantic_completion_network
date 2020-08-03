@@ -1,11 +1,9 @@
 import collections
 import logging
 import os
-import random
 
 import numpy as np
 import torch
-from fairseq.utils import move_to_cuda
 
 from models.loss import weakly_supervised_loss, cal_nll_loss
 from utils import TimeMeter, AverageMeter
@@ -26,9 +24,6 @@ class MainRunner:
             self.num_updates = 0
 
     def train(self):
-        self.model.load_state_dict(torch.load('checkpoints/activitynet/main/model-4.pt')['model_parameters'])
-        self.eval()
-        exit(0)
         for epoch in range(1, 20):
             logging.info('Start Epoch {}'.format(epoch))
             self.model_saved_path = self.args['train']['model_saved_path']
@@ -179,6 +174,7 @@ class MainRunner:
                 torch.manual_seed(seed + 3)
                 torch.cuda.manual_seed(seed + 4)
                 torch.cuda.manual_seed_all(seed + 4)
+
             set_seed(8 + worker_id)
 
         self.train_loader = DataLoader(self.train_set, batch_size=batch_size, shuffle=True,
@@ -263,3 +259,30 @@ def top_1_metric(pred, label):
     for i in range(1, 10, 2):
         result['IoU@0.{}'.format(i)] = 1.0 * np.sum(iou >= i / 10) / bsz
     return result
+
+
+def apply_to_sample(f, sample):
+    if len(sample) == 0:
+        return {}
+
+    def _apply(x):
+        if torch.is_tensor(x):
+            return f(x)
+        elif isinstance(x, dict):
+            return {
+                key: _apply(value)
+                for key, value in x.items()
+            }
+        elif isinstance(x, list):
+            return [_apply(x) for x in x]
+        else:
+            return x
+
+    return _apply(sample)
+
+
+def move_to_cuda(sample):
+    def _move_to_cuda(tensor):
+        return tensor.cuda()
+
+    return apply_to_sample(_move_to_cuda, sample)
