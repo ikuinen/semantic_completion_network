@@ -1,6 +1,6 @@
 # A Simple PyTorch Implementation of the Semantic Completion Networks 
 
-The paper accepted by AAAI-2020 is available here [pdf](https://arxiv.org/abs/1911.08199).
+The paper *Weakly-Supervised Video Moment Retrieval via Semantic Completion Network* accepted by AAAI-2020 is available here [pdf](https://arxiv.org/abs/1911.08199).
 
 + Train on the ActivityNet Dataset:
 ```
